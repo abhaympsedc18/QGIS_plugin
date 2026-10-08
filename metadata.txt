@@ -1,0 +1,13 @@
+[general]
+name=Exact Raster Boundary
+description=Creates exact valid-data raster footprints using QGIS and GDAL, excluding NoData/transparent pixels and optionally black RGB background.
+version=2.0.0
+qgisMinimumVersion=3.28
+author=Abhay Bisen
+email=
+about=Global-ready QGIS plugin for creating exact raster-data boundaries without Rasterio, GeoPandas or Shapely.
+category=Raster
+icon=icon.svg
+experimental=False
+deprecated=False
+hasProcessingProvider=False
