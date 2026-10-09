@@ -1,4 +1,4 @@
-# Exact Raster Boundary — Version 2.0.1
+# Exact Raster Boundary — Version 2.0.2
 
 ## Global-ready architecture
 
