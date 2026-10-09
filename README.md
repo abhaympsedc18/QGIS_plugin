@@ -72,3 +72,8 @@ pixel-derived footprint.
 - JPG
 - JPEG
 - PNG
+
+
+## QGIS version compatibility
+
+This package declares compatibility with QGIS 3.28 through the QGIS 3.x series (metadata maximum: 3.99), including QGIS 3.44.10-Solothurn. It targets QGIS 3.x APIs; QGIS 4.x compatibility is not claimed by this build.
