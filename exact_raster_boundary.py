@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Exact Raster Boundary - Version 2.0.2
+Exact Raster Boundary - Version 2.0.1
 
 Global QGIS plugin implementation using:
 - QGIS / PyQGIS
