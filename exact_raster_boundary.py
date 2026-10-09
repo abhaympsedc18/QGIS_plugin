@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Exact Raster Boundary - Version 2.0.0
+Exact Raster Boundary - Version 2.0.2
 
 Global QGIS plugin implementation using:
 - QGIS / PyQGIS
@@ -70,10 +70,7 @@ SUPPORTED_EXTENSIONS = {
 
 GDAL_USE_EXCEPTIONS = getattr(gdal, "UseExceptions", None)
 if GDAL_USE_EXCEPTIONS:
-    try:
-        gdal.UseExceptions()
-    except Exception:
-        pass
+    gdal.UseExceptions()
 
 
 def is_alpha_band(band):
@@ -90,12 +87,8 @@ def nodata_equal(arr, nodata):
     if nodata is None:
         return np.zeros(arr.shape, dtype=bool)
 
-    try:
-        if np.issubdtype(arr.dtype, np.floating):
-            if np.isnan(nodata):
-                return np.isnan(arr)
-    except Exception:
-        pass
+    if np.issubdtype(arr.dtype, np.floating) and np.isnan(nodata):
+        return np.isnan(arr)
 
     return arr == nodata
 
@@ -131,10 +124,7 @@ def build_valid_mask_raster(
         raise RuntimeError("GDAL GTiff driver is unavailable.")
 
     if os.path.exists(mask_path):
-        try:
-            driver.Delete(mask_path)
-        except Exception:
-            pass
+        driver.Delete(mask_path)
 
     mask_ds = driver.Create(
         mask_path,
@@ -241,11 +231,8 @@ def build_valid_mask_raster(
                 valid &= ~invalid_nd
 
                 # NaN is always invalid for floating point data.
-                try:
-                    if np.issubdtype(arr.dtype, np.floating):
-                        valid &= ~np.isnan(arr)
-                except Exception:
-                    pass
+                if np.issubdtype(arr.dtype, np.floating):
+                    valid &= ~np.isnan(arr)
 
             # Optional black RGB background removal.
             if black_rgb_invalid and rgb_available:
@@ -264,11 +251,8 @@ def build_valid_mask_raster(
                 )
                 if arr is not None:
                     valid &= arr != 0
-                    try:
-                        if np.issubdtype(arr.dtype, np.floating):
-                            valid &= ~np.isnan(arr)
-                    except Exception:
-                        pass
+                    if np.issubdtype(arr.dtype, np.floating):
+                        valid &= ~np.isnan(arr)
 
             out = np.where(valid, 1, 0).astype(np.uint8)
             out_band.WriteArray(out, xoff, yoff)
@@ -303,10 +287,7 @@ def polygonize_mask(mask_path, polygon_path):
         raise RuntimeError("GDAL ESRI Shapefile driver is unavailable.")
 
     if os.path.exists(polygon_path):
-        try:
-            shp_driver.DeleteDataSource(polygon_path)
-        except Exception:
-            pass
+        shp_driver.DeleteDataSource(polygon_path)
 
     out_ds = shp_driver.CreateDataSource(polygon_path)
     if out_ds is None:
@@ -366,10 +347,8 @@ def union_valid_polygons(polygon_path, output_shp, source_name):
 
     for feature in layer.getFeatures():
         if dn_index >= 0:
-            try:
-                if int(feature["DN"]) != 1:
-                    continue
-            except Exception:
+            dn_value = feature["DN"]
+            if dn_value is None or int(dn_value) != 1:
                 continue
 
         geom = feature.geometry()
@@ -387,13 +366,10 @@ def union_valid_polygons(polygon_path, output_shp, source_name):
         raise RuntimeError("The union of valid pixels is empty.")
 
     # Repair minor geometry issues if possible.
-    try:
-        if not union_geom.isGeosValid():
-            fixed = union_geom.makeValid()
-            if fixed is not None and not fixed.isEmpty():
-                union_geom = fixed
-    except Exception:
-        pass
+    if not union_geom.isGeosValid():
+        fixed = union_geom.makeValid()
+        if fixed is not None and not fixed.isEmpty():
+            union_geom = fixed
 
     crs = layer.crs()
 
@@ -435,8 +411,12 @@ def union_valid_polygons(polygon_path, output_shp, source_name):
         if os.path.exists(candidate):
             try:
                 os.remove(candidate)
-            except Exception:
-                pass
+            except OSError as exc:
+                raise RuntimeError(
+                    "Could not remove existing output sidecar '{}': {}".format(
+                        candidate, exc
+                    )
+                ) from exc
 
     transform_context = QgsProject.instance().transformContext()
 
@@ -535,11 +515,8 @@ def process_one_raster(
     finally:
         src = None
 
-        # GDAL may keep temporary handles alive briefly. Attempt cleanup.
-        try:
-            shutil_rmtree(temp_dir)
-        except Exception:
-            pass
+        # Ignore cleanup errors because shutil_rmtree uses ignore_errors=True.
+        shutil_rmtree(temp_dir)
 
 
 def shutil_rmtree(path):
@@ -551,7 +528,7 @@ class ExactRasterBoundaryDialog(QDialog):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Exact Raster Boundary — Global Version 2")
+        self.setWindowTitle("Exact Raster Boundary — QGIS 3.x")
         self.resize(820, 680)
         self._build_ui()
 
